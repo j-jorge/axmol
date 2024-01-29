@@ -38,6 +38,8 @@ THE SOFTWARE.
 #include "math/Mat3.h"
 #include "base/axstd.h"
 
+#include <span>
+
 /** @file ccUtils.h
 Misc free functions
 */
