@@ -145,7 +145,7 @@ static void convertRG8ToRGBA8(const unsigned char* data, size_t dataLen, unsigne
     for (ssize_t i = 0, l = dataLen - 1; i < l; i += 2)
     {
         *outData++ = data[i];      // R
-        *outData++ = data[i];      // G
+        *outData++ = data[i + 1];      // G
         *outData++ = data[i];      // B
         *outData++ = data[i + 1];  // A
     }
