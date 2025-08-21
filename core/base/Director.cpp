@@ -90,6 +90,7 @@ const char* Director::EVENT_BEFORE_UPDATE         = "director_before_update";
 const char* Director::EVENT_AFTER_UPDATE          = "director_after_update";
 const char* Director::EVENT_RESET                 = "director_reset";
 const char* Director::EVENT_BEFORE_DRAW           = "director_before_draw";
+const char* const Director::EVENT_AFTER_LOOP      = "director_after_loop";
 
 Director* Director::getInstance()
 {
@@ -137,6 +138,8 @@ bool Director::init()
     _beforeSetNextScene->setUserData(this);
     _afterSetNextScene = new EventCustom(EVENT_AFTER_SET_NEXT_SCENE);
     _afterSetNextScene->setUserData(this);
+    _eventAfterLoop = new EventCustom(EVENT_AFTER_LOOP);
+    _eventAfterLoop->setUserData(this);
     _eventAfterDraw = new EventCustom(EVENT_AFTER_DRAW);
     _eventAfterDraw->setUserData(this);
     _eventBeforeDraw = new EventCustom(EVENT_BEFORE_DRAW);
@@ -186,6 +189,7 @@ Director::~Director()
     AX_SAFE_RELEASE(_eventAfterUpdate);
     AX_SAFE_RELEASE(_eventAfterDraw);
     AX_SAFE_RELEASE(_eventBeforeDraw);
+    AX_SAFE_RELEASE(_eventAfterLoop);
     AX_SAFE_RELEASE(_eventAfterVisit);
     AX_SAFE_RELEASE(_eventProjectionChanged);
     AX_SAFE_RELEASE(_eventResetDirector);
@@ -359,6 +363,7 @@ void Director::drawScene()
         calculateMPF();
 #endif
     }
+    _eventDispatcher->dispatchEvent(_eventAfterLoop);
 }
 
 void Director::calculateDeltaTime()
