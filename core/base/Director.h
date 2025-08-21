@@ -103,6 +103,8 @@ public:
     static const char* EVENT_AFTER_DRAW;
     /** Director will trigger an event before a scene is drawn, right after clear. */
     static const char* EVENT_BEFORE_DRAW;
+    /** Director will trigger an event at the end of the main loop. */
+    static const char* const EVENT_AFTER_LOOP;
 
     /**
      * @brief Possible OpenGL projections used by director
@@ -567,6 +569,7 @@ protected:
      */
     EventDispatcher* _eventDispatcher    = nullptr;
     EventCustom* _eventProjectionChanged = nullptr;
+    EventCustom* _eventAfterLoop         = nullptr;
     EventCustom* _eventBeforeDraw        = nullptr;
     EventCustom* _eventAfterDraw         = nullptr;
     EventCustom* _eventAfterVisit        = nullptr;
