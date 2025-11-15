@@ -26,6 +26,7 @@ THE SOFTWARE.
 #include "RenderTargetGL.h"
 #include "DriverGL.h"
 #include "renderer/backend/opengl/MacrosGL.h"
+#include "Tracy.h"
 
 NS_AX_BACKEND_BEGIN
 
@@ -72,6 +73,7 @@ RenderTargetGL::~RenderTargetGL()
 
 void RenderTargetGL::bindFrameBuffer() const
 {
+    ZoneScopedN("RenderTargetGL::bindFrameBuffer");
     __gl->bindFrameBuffer(_FBO);
 }
 
@@ -82,12 +84,16 @@ void RenderTargetGL::unbindFrameBuffer() const
 
 void RenderTargetGL::update() const
 {
+    ZoneScopedN("RenderTargetGL::update");
+
     if (!_dirtyFlags)
         return;
     if (!_defaultRenderTarget)
     {
         if (bitmask::any(_dirtyFlags, TargetBufferFlags::COLOR_ALL))
-        {  // color attachments
+        {
+            ZoneScopedN("color_all");
+            // color attachments
             GLenum bufs[MAX_COLOR_ATTCHMENT] = {GL_NONE};
             for (size_t i = 0; i < MAX_COLOR_ATTCHMENT; ++i)
             {
@@ -108,6 +114,7 @@ void RenderTargetGL::update() const
 
         if (bitmask::any(_dirtyFlags, TargetBufferFlags::DEPTH))
         {
+            ZoneScopedN("depth");
             // depth attacmhemt
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
                                    _depth.texture != nullptr ? _depth.texture->getHandler() : 0, _depth.level);
@@ -116,6 +123,7 @@ void RenderTargetGL::update() const
 
         if (bitmask::any(_dirtyFlags, TargetBufferFlags::STENCIL))
         {
+            ZoneScopedN("stencil");
             // stencil attachment
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D,
                                    _stencil.texture != nullptr ? _stencil.texture->getHandler() : 0, _stencil.level);

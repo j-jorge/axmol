@@ -70,6 +70,8 @@ THE SOFTWARE.
 #    include "base/ScriptSupport.h"
 #endif
 
+#include "Tracy.h"
+
 using namespace std;
 
 namespace ax
@@ -286,12 +288,14 @@ void Director::drawScene()
 
     if (_renderView)
     {
+        ZoneScopedN("pollEvents");
         _renderView->pollEvents();
     }
 
     // tick before glClear: issue #533
     if (!_paused)
     {
+        ZoneScopedN("update");
         _eventDispatcher->dispatchEvent(_eventBeforeUpdate);
         _scheduler->update(_deltaTime);
         _eventDispatcher->dispatchEvent(_eventAfterUpdate);
@@ -1605,6 +1609,8 @@ void Director::mainLoop()
         // release the objects
         PoolManager::getInstance()->getCurrentPool()->clear();
     }
+
+    FrameMark;
 }
 
 void Director::mainLoop(float dt)

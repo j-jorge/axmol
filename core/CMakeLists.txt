@@ -285,6 +285,15 @@ list(APPEND _AX_SRC ${_AX_HEADER})
 
 add_library(${_AX_CORE_LIB} ${_AX_SRC})
 
+include(AXTracy)
+
+if(AX_ENABLE_TRACY)
+  target_compile_definitions(${_AX_CORE_LIB} PUBLIC AX_ENABLE_TRACY=1)
+  target_link_libraries(${_AX_CORE_LIB} PUBLIC Tracy::TracyClient)
+else()
+  target_compile_definitions(${_AX_CORE_LIB} PUBLIC AX_ENABLE_TRACY=0)
+endif()
+
 if(APPLE)
   set_xcode_property(${_AX_CORE_LIB} CLANG_ENABLE_OBJC_WEAK "YES")
 endif()

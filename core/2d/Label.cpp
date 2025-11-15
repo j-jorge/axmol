@@ -50,6 +50,7 @@
 #include "renderer/Shaders.h"
 #include "renderer/backend/ProgramState.h"
 #include "renderer/backend/ProgramStateRegistry.h"
+#include "Tracy.h"
 
 namespace ax
 {
@@ -1029,6 +1030,8 @@ void Label::setLineBreakWithoutSpace(bool breakWithoutSpace)
 
 void Label::updateLabelLetters()
 {
+    ZoneScoped;
+
     if (!_letters.empty())
     {
         Rect uvRect;
@@ -1094,6 +1097,8 @@ bool Label::alignText()
         setContentSize(Vec2::ZERO);
         return true;
     }
+
+    ZoneScoped;
 
     bool ret = true;
     do
@@ -1214,6 +1219,8 @@ bool Label::isLetterHorizontallyClamped(float letterPositionX, float letterWidth
 
 bool Label::updateQuads()
 {
+    ZoneScoped;
+
     bool ret = true;
     for (auto&& batchNode : _batchNodes)
     {
@@ -1325,7 +1332,7 @@ bool Label::updateTTFConfigInternal(unsigned int mods)
             updateShaderProgram();
         }
     }
-    
+
     if (_fontConfig.italics)
         this->enableItalics();
     if (_fontConfig.bold)
@@ -1356,6 +1363,8 @@ void Label::setBMFontSizeInternal(float fontSize)
 
 void Label::scaleFontSize(float fontSize)
 {
+    ZoneScoped;
+
     bool shouldUpdateContent = true;
     if (_currentLabelType == LabelType::TTF)
     {
@@ -1654,6 +1663,8 @@ void Label::disableEffect(LabelEffect effect)
 
 void Label::createSpriteForSystemFont(const FontDefinition& fontDef)
 {
+    ZoneScoped;
+
     _currentLabelType = LabelType::STRING_TEXTURE;
 
     auto texture = new Texture2D;
@@ -1680,6 +1691,8 @@ void Label::createSpriteForSystemFont(const FontDefinition& fontDef)
 
 void Label::createShadowSpriteForSystemFont(const FontDefinition& fontDef)
 {
+    ZoneScoped;
+
     if (!fontDef._stroke._strokeEnabled && fontDef._fontFillColor == _shadowColor3B &&
         (fontDef._fontAlpha == _shadowOpacity))
     {
@@ -1766,6 +1779,8 @@ void Label::clearTextures()
 
 void Label::updateContent()
 {
+    ZoneScoped;
+
     clearTextures();
     bool updateFinished = true;
 
@@ -1785,6 +1800,8 @@ void Label::updateContent()
 
     if (_lineDrawNode)
     {
+        ZoneScopedN("lineDrawNode");
+
         Color4B lineColor = Color4B(_displayedColor);
         if (_textColor != Color4B::WHITE && _textColor != lineColor)
             lineColor = _textColor;
@@ -1840,6 +1857,7 @@ void Label::updateContent()
         }
         else if (_textSprite)  // ...and is the logic for System fonts
         {
+            ZoneScopedN("textSprite");
             computeStringNumLines();
             const auto spriteSize = _textSprite->getContentSize();
 
@@ -2077,6 +2095,7 @@ void Label::draw(Renderer* renderer, const Mat4& transform, uint32_t flags)
     {
         return;
     }
+    ZoneScoped;
     // Don't do calculate the culling if the transform was not updated
     bool transformUpdated = flags & FLAGS_TRANSFORM_DIRTY;
 #if AX_USE_CULLING
@@ -2554,6 +2573,8 @@ void Label::updateColor()
         return;
     }
 
+    ZoneScoped;
+
     Color4B color4(_displayedColor.r, _displayedColor.g, _displayedColor.b, _displayedOpacity);
 
     // special opacity for premultiplied textures
@@ -2804,6 +2825,8 @@ void Label::updateLetterSpriteScale(Sprite* sprite)
 
 void Label::computeAlignmentOffset()
 {
+    ZoneScoped;
+
     _linesOffsetX.clear();
     switch (_hAlignment)
     {
@@ -3124,11 +3147,13 @@ bool Label::multilineTextWrap(bool breakOnChar, bool ignoreOverflow)
 
 bool Label::multilineTextWrapByWord(bool ignoreOverflow)
 {
+    ZoneScoped;
     return multilineTextWrap(false, ignoreOverflow);
 }
 
 bool Label::multilineTextWrapByChar(bool ignoreOverflow)
 {
+    ZoneScoped;
     return multilineTextWrap(true, ignoreOverflow);
 }
 

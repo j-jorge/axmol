@@ -1,0 +1,54 @@
+#pragma once
+
+/* When Tracy is disabled we don't link with Tracy::TracyClient, and thus the
+ * headers of Tracy are not available in the include paths. We must
+ * consequently define as no-op all the macros we use when it is disabled.
+ */
+#if AX_ENABLE_TRACY
+  #ifndef TRACY_ENABLE
+    #error "TRACY_ENABLE should be defined when AX_ENABLE_TRACY is ON."
+  #endif
+
+  #include <tracy/Tracy.hpp>
+#else
+  #define FrameMark                                                           \
+    do                                                                        \
+      {                                                                       \
+      }                                                                       \
+    while (false)
+  #define FrameMarkStart(t)                                                   \
+    do                                                                        \
+      {                                                                       \
+      }                                                                       \
+    while (false)
+  #define FrameMarkEnd(t)                                                     \
+    do                                                                        \
+      {                                                                       \
+      }                                                                       \
+    while (false)
+  #define ZoneScoped                                                          \
+    do                                                                        \
+      {                                                                       \
+      }                                                                       \
+    while (false)
+  #define ZoneScopedC(c)                                                      \
+    do                                                                        \
+      {                                                                       \
+      }                                                                       \
+    while (false)
+  #define ZoneScopedN(n)                                                      \
+    do                                                                        \
+      {                                                                       \
+      }                                                                       \
+    while (false)
+  #define TracyPlot(n, v)                                                     \
+    do                                                                        \
+      {                                                                       \
+      }                                                                       \
+    while (false)
+  #define TracyPlotConfig(n, t, a, b, c)                                      \
+    do                                                                        \
+      {                                                                       \
+      }                                                                       \
+    while (false)
+#endif
