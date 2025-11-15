@@ -44,6 +44,8 @@
 
 #include "base/PaddedString.h"
 
+#include "Tracy.h"
+
 namespace ax
 {
 
@@ -317,6 +319,8 @@ bool FontAtlas::getLetterDefinitionForChar(char32_t utf32Char, FontLetterDefinit
 
 void FontAtlas::findNewCharacters(const std::u32string& u32Text, std::unordered_set<char32_t>& charset)
 {
+    ZoneScoped;
+
     if (_letterDefinitions.empty())
     {
         std::copy(u32Text.begin(), u32Text.end(), std::inserter(charset, charset.end()));
@@ -335,6 +339,8 @@ bool FontAtlas::prepareLetterDefinitions(const std::u32string& utf32Text)
     {
         return false;
     }
+
+    ZoneScoped;
 
     if (!_currentPageData)
         reinit();
@@ -462,6 +468,7 @@ bool FontAtlas::prepareLetterDefinitions(const std::u32string& utf32Text)
 
 void FontAtlas::updateTextureContent(backend::PixelFormat format, int startY)
 {
+    ZoneScoped;
     auto data = _currentPageData + (_width * (int)startY << _strideShift);
     _atlasTextures[_currentPage]->updateWithSubData(data, 0, startY, _width,
                                                     (std::min)((int)_currentPageOrigY - startY + _currLineHeight, _height));
@@ -477,6 +484,7 @@ void FontAtlas::addNewPage()
 
 void FontAtlas::addNewPageWithData(const uint8_t* data, size_t size)
 {
+    ZoneScoped;
     assert(_currentPageDataSize == size);
 
     auto texture = new Texture2D();

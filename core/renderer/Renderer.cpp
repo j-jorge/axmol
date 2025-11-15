@@ -45,9 +45,15 @@
 #include "2d/Camera.h"
 #include "2d/Scene.h"
 #include "xxhash.h"
+#include "Tracy.h"
 
 #include "renderer/backend/Backend.h"
 #include "renderer/backend/RenderTarget.h"
+
+#if AX_ENABLE_TRACY
+static const char* g_tracy_plot_batches = "Drawn batches";
+static const char* g_tracy_plot_vertices = "Drawn vertices";
+#endif
 
 namespace ax
 {
@@ -279,6 +285,7 @@ int Renderer::createRenderQueue()
 
 void Renderer::processGroupCommand(GroupCommand* command)
 {
+    ZoneScoped;
     flush();
 
     int renderQueueID = ((GroupCommand*)command)->getRenderQueueID();
@@ -293,6 +300,7 @@ void Renderer::processRenderCommand(RenderCommand* command)
     {
     case RenderCommand::Type::TRIANGLES_COMMAND:
     {
+        ZoneScopedN("Triangles");
         // flush other queues
         flush3D();
 
@@ -340,9 +348,13 @@ void Renderer::processRenderCommand(RenderCommand* command)
         drawCustomCommand(command);
         break;
     case RenderCommand::Type::CALLBACK_COMMAND:
+    {
         flush();
+
+        ZoneScopedN("Cabllback");
         static_cast<CallbackCommand*>(command)->execute();
         _callbackCommandsPool.emplace_back(static_cast<CallbackCommand*>(command));
+    }
         break;
     default:
         assert(false);
@@ -362,33 +374,48 @@ void Renderer::visitRenderQueue(RenderQueue& queue)
     //
     // Process Global-Z < 0 Objects
     //
-    doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::GLOBALZ_NEG));
+    {
+        ZoneScopedN("Global-Z < 0");
+        doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::GLOBALZ_NEG));
+    }
 
     //
     // Process Opaque Object
     //
     pushStateBlock();
-    setDepthTest(true);  // enable depth test in 3D queue by default
-    setDepthWrite(true);
-    setCullMode(backend::CullMode::BACK);
-    doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::OPAQUE_3D));
+    {
+        ZoneScopedN("Opaque 3D");
+        setDepthTest(true);  // enable depth test in 3D queue by default
+        setDepthWrite(true);
+        setCullMode(backend::CullMode::BACK);
+        doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::OPAQUE_3D));
+    }
 
     //
     // Process 3D Transparent object
     //
-    setDepthWrite(false);
-    doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::TRANSPARENT_3D));
+    {
+      ZoneScopedN("Transparent 3D");
+      setDepthWrite(false);
+      doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::TRANSPARENT_3D));
+    }
     popStateBlock();
 
     //
     // Process Global-Z = 0 Queue
     //
-    doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::GLOBALZ_ZERO));
+    {
+        ZoneScopedN("Global-Z = 0");
+        doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::GLOBALZ_ZERO));
+    }
 
     //
     // Process Global-Z > 0 Queue
     //
-    doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::GLOBALZ_POS));
+    {
+        ZoneScopedN("Global-Z > 0");
+        doVisitRenderQueue(queue.getSubQueue(RenderQueue::QUEUE_GROUP::GLOBALZ_POS));
+    }
 
     popStateBlock();
 }
@@ -404,6 +431,7 @@ void Renderer::doVisitRenderQueue(const std::vector<RenderCommand*>& renderComma
 
 void Renderer::render()
 {
+    ZoneScoped;
     // TODO: setup camera or MVP
     _isRendering = true;
 
@@ -414,6 +442,9 @@ void Renderer::render()
         renderqueue.sort();
     }
     visitRenderQueue(_renderGroups[0]);
+
+    TracyPlot(g_tracy_plot_batches, (int64_t)_drawnBatches);
+    TracyPlot(g_tracy_plot_vertices, (int64_t)_drawnVertices);
 
     clean();
     _isRendering = false;
@@ -426,6 +457,7 @@ bool Renderer::beginFrame()
 
 void Renderer::endFrame()
 {
+    ZoneScoped;
     _commandBuffer->endFrame();
 
 #ifdef AX_USE_METAL
@@ -716,6 +748,8 @@ void Renderer::drawBatchedTriangles()
 
 void Renderer::drawCustomCommand(RenderCommand* command)
 {
+    ZoneScoped;
+
     auto cmd = static_cast<CustomCommand*>(command);
 
     if (cmd->getBeforeCallback())
@@ -758,12 +792,14 @@ void Renderer::drawCustomCommand(RenderCommand* command)
 
 void Renderer::drawMeshCommand(RenderCommand* command)
 {
+    ZoneScoped;
     // MeshCommand and CustomCommand are identical while rendering.
     drawCustomCommand(command);
 }
 
 void Renderer::flush()
 {
+    ZoneScoped;
     flush2D();
     flush3D();
 }
@@ -867,6 +903,7 @@ void Renderer::clear(ClearFlag flags, const Color4F& color, float depth, unsigne
     command->init(globalOrder);
     command->func = [this, flags, color, depth, stencil]() -> void {
 
+        ZoneScopedN("clear");
         backend::RenderPassDescriptor descriptor;
 
         descriptor.flags.clear = flags;

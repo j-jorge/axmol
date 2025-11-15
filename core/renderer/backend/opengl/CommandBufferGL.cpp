@@ -36,6 +36,7 @@
 #include "UtilsGL.h"
 #include "RenderTargetGL.h"
 #include "DriverGL.h"
+#include "Tracy.h"
 #include <algorithm>
 
 NS_AX_BACKEND_BEGIN
@@ -79,6 +80,7 @@ bool CommandBufferGL::beginFrame()
 
 void CommandBufferGL::beginRenderPass(const RenderTarget* rt, const RenderPassDescriptor& descriptor)
 {
+    ZoneScoped;
     auto rtGL = static_cast<const RenderTargetGL*>(rt);
 
     rtGL->bindFrameBuffer();
@@ -90,6 +92,7 @@ void CommandBufferGL::beginRenderPass(const RenderTarget* rt, const RenderPassDe
     GLbitfield mask = 0;
     if (bitmask::any(clearFlags, TargetBufferFlags::COLOR))
     {
+        ZoneScopedN("color");
         mask |= GL_COLOR_BUFFER_BIT;
         const auto& clearColor = descriptor.clearColorValue;
         glClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
@@ -103,6 +106,7 @@ void CommandBufferGL::beginRenderPass(const RenderTarget* rt, const RenderPassDe
     GLint oldDepthFunc         = GL_LESS;
     if (bitmask::any(clearFlags, TargetBufferFlags::DEPTH))
     {
+        ZoneScopedN("set depth");
         glGetBooleanv(GL_DEPTH_WRITEMASK, &oldDepthWrite);
         glGetBooleanv(GL_DEPTH_TEST, &oldDepthTest);
         glGetFloatv(GL_DEPTH_CLEAR_VALUE, &oldDepthClearValue);
@@ -120,18 +124,23 @@ void CommandBufferGL::beginRenderPass(const RenderTarget* rt, const RenderPassDe
 
     if (bitmask::any(clearFlags, TargetBufferFlags::STENCIL))
     {
+        ZoneScopedN("stencil");
         mask |= GL_STENCIL_BUFFER_BIT;
         glClearStencil(descriptor.clearStencilValue);
     }
 
     if (mask)
+    {
+        ZoneScopedN("mask");
         glClear(mask);
+    }
 
     CHECK_GL_ERROR_DEBUG();
 
     // restore depth test
     if (bitmask::any(clearFlags, TargetBufferFlags::DEPTH))
     {
+        ZoneScopedN("restore depth");
         if (!oldDepthTest)
             __gl->disableDepthTest();
 

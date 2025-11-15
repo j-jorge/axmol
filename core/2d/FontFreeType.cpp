@@ -34,6 +34,7 @@ THE SOFTWARE.
 #include "platform/FileUtils.h"
 #include "platform/FileStream.h"
 #include "platform/Application.h"
+#include "Tracy.h"
 
 #include "ft2build.h"
 #include FT_FREETYPE_H
@@ -426,6 +427,8 @@ unsigned char* FontFreeType::getGlyphBitmap(char32_t charCode,
                                             int& xAdvance,
                                             FontFaceInfo** ppFallbackInfo)
 {
+    ZoneScoped;
+
     unsigned char* ret = nullptr;
 
     // @remark: glyphIndex=0 means charactor is mssing on current font face
@@ -475,15 +478,21 @@ unsigned char* FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
                                                    Rect& outRect,
                                                    int& xAdvance)
 {
+    ZoneScoped;
+
     unsigned char* ret = nullptr;
 
     do
     {
-        if (FT_Load_Glyph(_fontFace, glyphIndex, FT_LOAD_RENDER | FT_LOAD_NO_AUTOHINT))
-            break;
+        {
+            ZoneScopedN("FT_Load_Glyph");
+            if (FT_Load_Glyph(_fontFace, glyphIndex, FT_LOAD_RENDER | FT_LOAD_NO_AUTOHINT))
+                break;
+        }
 
         if (_distanceFieldEnabled && _fontFace->glyph->bitmap.buffer)
         {
+            ZoneScopedN("FT_Render_Glyph");
             // Require freetype version > 2.11.0, because freetype 2.11.0 sdf has memory access bug, see:
             // https://gitlab.freedesktop.org/freetype/freetype/-/issues/1077
             FT_Render_Glyph(_fontFace->glyph, FT_Render_Mode::FT_RENDER_MODE_SDF);
@@ -503,6 +512,7 @@ unsigned char* FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
 
         if (_outlineSize > 0 && outWidth > 0 && outHeight > 0)
         {
+            ZoneScopedN("Outline");
             auto copyBitmap = new unsigned char[outWidth * outHeight];
             memcpy(copyBitmap, ret, outWidth * outHeight * sizeof(unsigned char));
 
@@ -538,6 +548,7 @@ unsigned char* FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
             unsigned char* blendImage = nullptr;
             if (blendWidth > 0 && blendHeight > 0)
             {
+                ZoneScopedN("Blend");
                 FT_Pos index, index2;
                 auto imageSize = blendWidth * blendHeight * 2;
                 blendImage     = new unsigned char[imageSize];
@@ -590,6 +601,8 @@ unsigned char* FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
 
 unsigned char* FontFreeType::getGlyphBitmapWithOutline(unsigned int glyphIndex, FT_BBox& bbox)
 {
+    ZoneScoped;
+
     unsigned char* ret = nullptr;
     if (FT_Load_Glyph(_fontFace, glyphIndex, FT_LOAD_NO_BITMAP) == 0)
     {
