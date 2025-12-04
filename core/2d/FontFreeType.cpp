@@ -210,6 +210,12 @@ FontFreeType::FontFreeType(bool distanceFieldEnabled /* = false */, float outlin
 
 FontFreeType::~FontFreeType()
 {
+    AX_ASSERT(_usedBuffers.empty());
+
+    for (const BufferPool& p : _availableBuffers)
+        for (uint8_t* b : p.buffers)
+            delete[] b;
+
     if (_FTInitialized)
     {
         if (_stroker)
@@ -512,15 +518,15 @@ unsigned char* FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
         if (_outlineSize > 0 && outWidth > 0 && outHeight > 0)
         {
             ZoneScopedN("Outline");
-            auto copyBitmap = new unsigned char[outWidth * outHeight];
-            memcpy(copyBitmap, ret, outWidth * outHeight * sizeof(unsigned char));
+            uint8_t* const copyBitmap = acquireBuffer(outWidth * outHeight);
+            memcpy(copyBitmap, ret, outWidth * outHeight * sizeof(uint8_t));
 
             FT_BBox bbox;
             auto outlineBitmap = getGlyphBitmapWithOutline(glyphIndex, bbox);
             if (outlineBitmap == nullptr)
             {
                 ret = nullptr;
-                delete[] copyBitmap;
+                releaseBuffer(copyBitmap);
                 break;
             }
 
@@ -550,7 +556,7 @@ unsigned char* FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
                 ZoneScopedN("Blend");
                 FT_Pos index, index2;
                 auto imageSize = blendWidth * blendHeight * 2;
-                blendImage     = new unsigned char[imageSize];
+                blendImage     = acquireBuffer(imageSize);
                 memset(blendImage, 0, imageSize);
 
                 auto px = outlineMinX - blendImageMinX;
@@ -583,8 +589,8 @@ unsigned char* FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
             outWidth            = static_cast<int>(blendWidth);
             outHeight           = static_cast<int>(blendHeight);
 
-            delete[] outlineBitmap;
-            delete[] copyBitmap;
+            releaseBuffer(outlineBitmap);
+            releaseBuffer(copyBitmap);
             ret = blendImage;
         }
 
@@ -596,6 +602,24 @@ unsigned char* FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
     xAdvance            = 0;
 
     return nullptr;
+}
+
+/**
+ * Put the given buffer back into the pool of buffers.
+ */
+void FontFreeType::releaseBuffer(uint8_t* buffer)
+{
+    const UsedBuffersMap::iterator it = _usedBuffers.find(buffer);
+    AX_ASSERT(it != _usedBuffers.end());
+
+    for (BufferPool& p : _availableBuffers)
+        if (p.capacity == it->second)
+        {
+            p.buffers.emplace_back(buffer);
+            break;
+        }
+
+    _usedBuffers.erase(it);
 }
 
 unsigned char* FontFreeType::getGlyphBitmapWithOutline(unsigned int glyphIndex, FT_BBox& bbox)
@@ -619,7 +643,7 @@ unsigned char* FontFreeType::getGlyphBitmapWithOutline(unsigned int glyphIndex, 
                     int32_t rows  = static_cast<int32_t>((bbox.yMax - bbox.yMin) >> 6);
 
                     FT_Bitmap bmp;
-                    bmp.buffer = new unsigned char[width * rows];
+                    bmp.buffer = acquireBuffer(width * rows);
                     memset(bmp.buffer, 0, width * rows);
                     bmp.width      = (int)width;
                     bmp.rows       = (int)rows;
@@ -665,7 +689,7 @@ void FontFreeType::renderCharAt(unsigned char* dest,
             memcpy(dest + (iX + (iY * atlasWidth)) * 2, bitmap + bitmap_y * 2, bitmapWidth * 2);
             ++iY;
         }
-        delete[] bitmap;
+        releaseBuffer(bitmap);
     }
     else
     {
@@ -720,6 +744,59 @@ void FontFreeType::releaseFont(std::string_view fontName)
         else
             item++;
     }
+}
+
+/**
+ * Find a buffer with a capacity larger or equal to the given size. If there is
+ * no such buffer, a new one is created. In all cases the returned buffer is
+ * added to the used buffers list and will have to be released via
+ * releaseBuffer.
+ */
+uint8_t* FontFreeType::acquireBuffer(size_t size)
+{
+    const size_t n = _availableBuffers.size();
+
+    // Index of the first pool of large enough buffers. If we could not find a
+    // buffer for the exact given size, this is also the index where a new pool
+    // will be inserted, since it is the first larger than the size (or the end
+    // of the list).
+    size_t new_pool_index = n;
+
+    // Find the place where the best pool for our size should be (i.e. the first
+    // pool for buffers of capacity greater or equal to the requested size).
+    for (size_t i = 0; i != n; ++i)
+        if (_availableBuffers[i].capacity >= size)
+        {
+            new_pool_index = i;
+            break;
+        }
+
+    // Now search for a pool with an available buffer.
+    for (size_t i = new_pool_index; i != n; ++i)
+    {
+        BufferPool& p = _availableBuffers[i];
+
+        if (!p.buffers.empty())
+        {
+            uint8_t* const buffer = p.buffers.back();
+            p.buffers.pop_back();
+            _usedBuffers[buffer] = p.capacity;
+
+            return buffer;
+        }
+    }
+
+    if ((new_pool_index == n) || (_availableBuffers[new_pool_index].capacity != size))
+        // Either all pools have capacities smaller than the requested size, or else
+        // We have pools with capacity larger than the requested size but none had
+        // an available buffer. We create a new pool for the requested size so
+        // we'll be ready to receive the buffer in releaseBuffer.
+        _availableBuffers.emplace(_availableBuffers.begin() + new_pool_index)->capacity = size;
+
+    uint8_t* const buffer(new uint8_t[size]);
+    _usedBuffers[buffer] = size;
+
+    return buffer;
 }
 
 }

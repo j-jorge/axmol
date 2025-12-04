@@ -28,7 +28,9 @@
 
 #include "2d/Font.h"
 #include "2d/IFontEngine.h"
+
 #include <string>
+#include <unordered_map>
 
 namespace ax
 {
@@ -133,6 +135,7 @@ public:
                                          int& outHeight,
                                          Rect& outRect,
                                          int& xAdvance);
+    void releaseBuffer(uint8_t* buffer);
 
     int getFontAscender() const;
     const char* getFontFamily() const;
@@ -169,6 +172,8 @@ private:
 
     void setGlyphCollection(GlyphCollection glyphs, std::string_view customGlyphs);
 
+    uint8_t* acquireBuffer(size_t size);
+
     FT_Face _fontFace;
     FT_Stream _fontStream;
     FT_Stroker _stroker;
@@ -183,6 +188,19 @@ private:
 
     GlyphCollection _usedGlyphs;
     std::string _customGlyphs;
+
+    struct BufferPool
+    {
+        size_t capacity;
+        std::vector<uint8_t*> buffers;
+    };
+
+    using BufferPoolVector = std::vector<BufferPool>;
+    using UsedBuffersMap = std::unordered_map<uint8_t*, size_t>;
+
+    /// Those are sorted by increasing capacity.
+    BufferPoolVector _availableBuffers;
+    UsedBuffersMap _usedBuffers;
 };
 
 // end of _2d group

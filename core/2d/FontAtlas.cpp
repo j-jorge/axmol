@@ -444,7 +444,8 @@ bool FontAtlas::prepareLetterDefinitions(const std::u32string& utf32Text)
         }
         else
         {
-            delete[] bitmap;
+            if (bitmap)
+                charRenderer->releaseBuffer(bitmap);
 
             tempDef.validDefinition = !!tempDef.xAdvance;
             tempDef.width           = 0;
