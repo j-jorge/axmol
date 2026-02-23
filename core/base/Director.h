@@ -317,7 +317,7 @@ public:
     void replaceScene(Scene* scene);
 
     /** Removes the previous scene from the stack if it exists, and returns it
-     * If there are less than 2 scenes in the stack, or if there is a 
+     * If there are less than 2 scenes in the stack, or if there is a
      * scene switch about to occur, then this call would be invalid, and a nullptr
      * will be returned.
      *
@@ -552,7 +552,7 @@ protected:
 #if !AX_STRIP_FPS
     void showStats();
     void createStatsLabel();
-    void calculateMPF();
+    void calculateMPF(float frameDuration, float updateDuration, float renderDuration);
     void getFPSImageData(unsigned char** datapointer, ssize_t* length);
 #endif
 
@@ -624,6 +624,8 @@ protected:
     unsigned int _totalFrames = 0;
     unsigned int _frames      = 0;
     float _secondsPerFrame    = 1.f;
+    float _secondsPerUpdate    = 1.f;
+    float _secondsPerRender    = 1.f;
 
     /* The running scene */
     Scene* _runningScene = nullptr;
