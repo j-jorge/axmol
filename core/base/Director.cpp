@@ -278,6 +278,10 @@ void Director::setRenderDefaults()
 // Draw the Scene
 void Director::drawScene()
 {
+#if !AX_STRIP_FPS
+    const std::chrono::steady_clock::time_point start =
+      std::chrono::steady_clock::now();
+#endif
     _renderer->beginFrame();
 
     // calculate "global" dt
@@ -297,6 +301,11 @@ void Director::drawScene()
         _scheduler->update(_deltaTime);
         _eventDispatcher->dispatchEvent(_eventAfterUpdate);
     }
+
+#if !AX_STRIP_FPS
+    const std::chrono::steady_clock::time_point updateDone =
+      std::chrono::steady_clock::now();
+#endif
 
     _renderer->clear(ClearFlag::ALL, _clearColor, 1, 0, -10000.0);
 
@@ -362,7 +371,20 @@ void Director::drawScene()
     if (_statsDisplay)
     {
 #if !AX_STRIP_FPS
-        calculateMPF();
+        const std::chrono::steady_clock::time_point now =
+          std::chrono::steady_clock::now();
+
+        const float frameDuration =
+            std::chrono::duration_cast<std::chrono::duration<float>>
+            (now - start).count();
+        const float updateDuration =
+            std::chrono::duration_cast<std::chrono::duration<float>>
+            (updateDone - start).count();
+        const float renderDuration =
+            std::chrono::duration_cast<std::chrono::duration<float>>
+            (now - updateDone).count();
+
+        calculateMPF(frameDuration, updateDuration, renderDuration);
 #endif
     }
 }
@@ -1284,14 +1306,18 @@ void Director::showStats()
 
     if (_statsDisplay && _FPSLabel && _drawnBatchesLabel && _drawnVerticesLabel)
     {
-        char buffer[30];
+        char buffer[60];
 
         // Probably we don't need this anymore since
         // the framerate is using a low-pass filter
         // to make the FPS stable
         if (_accumDt > AX_DIRECTOR_STATS_INTERVAL)
         {
-            auto msg = fmt::format_to_z(buffer, "{:.1f} / {:.3f}", _frames / _accumDt, _secondsPerFrame);
+            auto msg = fmt::format_to_z
+              (buffer, "{:.1f} / {:.3f} / {} / {:.3f} / {} / {:.3f} / {}",
+               _frames / _accumDt, _secondsPerFrame, (int)(1 / _secondsPerFrame),
+               _secondsPerUpdate, (int)(1 / _secondsPerUpdate),
+               _secondsPerRender, (int)(1 / _secondsPerRender));
             _FPSLabel->setString(msg);
             _accumDt = 0;
             _frames  = 0;
@@ -1320,13 +1346,13 @@ void Director::showStats()
     }
 }
 
-void Director::calculateMPF()
+void Director::calculateMPF(float frameDuration, float updateDuration, float renderDuration)
 {
-    static float prevSecondsPerFrame = 0;
-    static const float MPF_FILTER    = 0.10f;
+    static constexpr float MPF_FILTER    = 0.10f;
 
-    _secondsPerFrame    = _deltaTime * MPF_FILTER + (1 - MPF_FILTER) * prevSecondsPerFrame;
-    prevSecondsPerFrame = _secondsPerFrame;
+    _secondsPerFrame = frameDuration * MPF_FILTER + (1 - MPF_FILTER) * _secondsPerFrame;
+    _secondsPerUpdate = updateDuration * MPF_FILTER + (1 - MPF_FILTER) * _secondsPerUpdate;
+    _secondsPerRender = renderDuration * MPF_FILTER + (1 - MPF_FILTER) * _secondsPerRender;
 }
 
 // returns the FPS image data pointer and len
