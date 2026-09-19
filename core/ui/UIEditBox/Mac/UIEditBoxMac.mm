@@ -178,6 +178,9 @@
 
 - (void)controlTextDidEndEditing:(NSNotification*)notification
 {
+    if ( _editState == NO )
+        return;
+
     _editState = NO;
 
     getEditBoxImplMac()->editBoxEditingDidEnd([self getText], [self getEndAction:notification]);

@@ -316,11 +316,15 @@ bool EditBoxImplLinux::isEditing()
 void EditBoxImplLinux::nativeOpenKeyboard()
 {
     std::string text = this->getText();
-    bool didChange   = LinuxInputBox(text);
-    if (didChange)
-    {
-        this->editBoxEditingDidEnd(text);
-    }
+    this->editBoxEditingDidBegin();
+
+    bool didChange = LinuxInputBox(text);
+
+    this->editBoxEditingDidEnd
+        (text,
+         didChange
+         ? EditBoxDelegate::EditBoxEndAction::RETURN
+         : EditBoxDelegate::EditBoxEndAction::UNKNOWN);
 }
 
 }  // namespace ui
