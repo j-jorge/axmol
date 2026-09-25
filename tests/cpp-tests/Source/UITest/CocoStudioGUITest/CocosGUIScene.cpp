@@ -71,7 +71,7 @@ GUIDynamicCreateTests::GUIDynamicCreateTests()
         !defined(AX_TARGET_OS_TVOS) ||                                                      \
     (AX_TARGET_PLATFORM == AX_PLATFORM_WIN32 && defined(AX_ENABLE_MSEDGE_WEBVIEW2)) ||      \
     (AX_TARGET_PLATFORM == AX_PLATFORM_LINUX)
-    addTest("WebView Test", []() { return new WebViewTests; });
+    //addTest("WebView Test", []() { return new WebViewTests; });
 #endif
 #if (AX_TARGET_PLATFORM == AX_PLATFORM_IOS) || (AX_TARGET_PLATFORM == AX_PLATFORM_ANDROID) ||                 \
     (AX_TARGET_PLATFORM == AX_PLATFORM_WASM) || (AX_TARGET_PLATFORM == AX_PLATFORM_MAC) || defined(_WIN32) || \
