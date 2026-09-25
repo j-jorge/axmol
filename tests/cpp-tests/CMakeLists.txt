@@ -359,12 +359,12 @@ if(AX_ENABLE_MEDIA)
 endif()
 
 if(ANDROID OR IOS OR LINUX OR (WINDOWS AND AX_ENABLE_MSEDGE_WEBVIEW2))
-    list(APPEND GAME_HEADER
-         Source/UITest/CocoStudioGUITest/UIWebViewTest/UIWebViewTest.h
-         )
-    list(APPEND GAME_SOURCE
-         Source/UITest/CocoStudioGUITest/UIWebViewTest/UIWebViewTest.cpp
-         )
+    # list(APPEND GAME_HEADER
+    #      Source/UITest/CocoStudioGUITest/UIWebViewTest/UIWebViewTest.h
+    #      )
+    # list(APPEND GAME_SOURCE
+    #      Source/UITest/CocoStudioGUITest/UIWebViewTest/UIWebViewTest.cpp
+    #      )
 endif()
 
 if(WINDOWS OR MACOSX OR LINUX)
