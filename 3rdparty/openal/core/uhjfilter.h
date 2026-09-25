@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <array>
+#include <cstdint>
 
 #include "almalloc.h"
 #include "alspan.h"
