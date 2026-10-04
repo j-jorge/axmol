@@ -553,6 +553,8 @@ FontFreeTypeBitmap FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
                                                        Rect& outRect,
                                                        int& xAdvance)
 {
+    ZoneScoped;
+
     FontFreeTypeBitmap ret;
 
     do
@@ -678,6 +680,8 @@ FontFreeTypeBitmap FontFreeType::getGlyphBitmapByIndex(unsigned int glyphIndex,
 
 FontFreeTypeBitmap FontFreeType::getGlyphBitmapWithOutline(unsigned int glyphIndex, FT_BBox& bbox)
 {
+    ZoneScoped;
+
     if (FT_Load_Glyph(_fontFace, glyphIndex, FT_LOAD_NO_BITMAP))
     {
         AXLOGE("Failed to load the glyph with FT_LOAD_NO_BITMAP.");
