@@ -12,6 +12,8 @@
 #include "platform/SystemFontRequest.h"
 #include "platform/SystemFontResult.h"
 
+#include "Tracy.h"
+
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
@@ -82,6 +84,8 @@ ax::FontFallback::~FontFallback()
 
 std::string ax::FontFallback::lookupFontFaceForCodepoint(char32_t charCode, std::string_view family, bool bold, bool italic)
 {
+    ZoneScoped;
+
     // Prefer user-provided fonts, even if the family does not exactly match.
     std::string r = findFont(_fonts, charCode, family, bold, italic, false);
 

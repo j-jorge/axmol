@@ -14,6 +14,8 @@
 
 #include "base/UTF8.h"
 
+#include "Tracy.h"
+
 #include <algorithm>
 #include <filesystem>
 
@@ -37,6 +39,8 @@ ax::SystemFonts& ax::SystemFonts::getInstance()
 
 ax::SystemFonts::SystemFonts()
 {
+    ZoneScoped;
+
     // Android API level 29 has an API to retrieve system fonts but it does not
     // allow to filter on other criteria than the font family and the available
     // glyphs. We use an ad-hoc solution here to customize our filters and to
@@ -69,6 +73,8 @@ ax::SystemFonts::~SystemFonts() = default;
 
 ax::SystemFontResult ax::SystemFonts::findFont(const SystemFontRequest& request)
 {
+    ZoneScoped;
+
     const FT_Library freetype = FontFreeType::getFTLibrary();
 
     const size_t cacheSize = _cache.size();

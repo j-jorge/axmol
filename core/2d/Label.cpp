@@ -1129,6 +1129,8 @@ void Label::alignText()
         return;
     }
 
+    ZoneScoped;
+
     _fontAtlas->prepareLetterDefinitions(_utf32Text, _fontFallbackEngine);
 
     float currentFontSize = getRenderingFontSize();
